@@ -13,8 +13,10 @@ from PyQt5 import QtCore
 from PyQt5 import QtGui
 from PyQt5 import QtWidgets
 from dlib import shape_predictor
+from local_settings_manager import LocalSettings
 
 QtWidgets.QFrame
+settings = LocalSettings()
 
 
 class QHLine(QtWidgets.QFrame):
@@ -74,7 +76,8 @@ class LandMarksTab(QtWidgets.QWidget):
 
 class CalibrationTab(QtWidgets.QWidget):
 
-    def __init__(self, parent=None, CalibrationType='Iris', CalibrationValue=11.77):
+    def __init__(self, parent=None, CalibrationType=settings.get_setting('_CalibrationType'),
+                 CalibrationValue=settings.get_setting('_CalibrationValue')):
         super(CalibrationTab, self).__init__(parent)
 
         # spacerh = QHLine()#QtWidgets.QWidget(self)
@@ -132,10 +135,15 @@ class CalibrationTab(QtWidgets.QWidget):
 
         self.setLayout(layout)
 
+    def __del__(self):
+        # sync Settings with local store
+        settings.set_setting('_CalibrationType', self._CalibrationType)
+        settings.set_setting('_CalibrationValue', self._CalibratioValue)
+
 
 class ModelTab(QtWidgets.QWidget):
 
-    def __init__(self, parent=None, ModelName='iBUG'):
+    def __init__(self, parent=None, ModelName=settings.get_setting('_ModelName')):
         super(ModelTab, self).__init__(parent)
 
         if os.name is 'posix':  # is a mac or linux
@@ -207,18 +215,20 @@ class ModelTab(QtWidgets.QWidget):
 
         self.setLayout(layout)
 
+    def __del__(self):
+        # TODO test custom model name
+        settings.set_setting('_ModelName', self._ModelName)
+
     def select_model(self):
         # load a file using the widget
         name, _ = QtWidgets.QFileDialog.getOpenFileName(
-            self, 'Load Model',
-            '', "dat files (*.dat)")
+            parent=self, caption='Load Model',
+            directory='', filter="dat files (*.dat)")
 
         if not name:
             pass
         else:
-
             self._ModelName = os.path.normpath(name)
-
             # test if we can use the model
             try:  # try to load the model provided by the user
                 _ = shape_predictor(os.path.normpath(self._ModelName))  # just verify that te model can be loaded (...)
@@ -328,18 +338,27 @@ class ModelTab(QtWidgets.QWidget):
 #                            QtWidgets.QMessageBox.Ok)   
 
 class ShowSettings(QtWidgets.QDialog):
-    def __init__(self, parent=None, ModelName='iBUG', CalibrationType='Iris', CalibrationValue=11.77,
-                 size_landmarks=None, shape=None):
+    def __del__(self):
+        settings.set_setting('_ModelName', self._ModelName)
+        settings.set_setting('_CalibrationType', self._CalibrationType)
+        settings.set_setting('_CalibrationValue', self._CalibrationValue)
+        settings.set_setting('_size_landmarks', self._size_landmarks)
+        settings.set_setting('_shape', self._shape)
+
+    def __init__(self, parent=None, ModelName=settings.get_setting('_ModelName'),
+                 CalibrationType=settings.get_setting('_CalibrationType'),
+                 CalibrationValue=settings.get_setting('_CalibrationValue'),
+                 size_landmarks=settings.get_setting('_size_landmarks'), shape='_shape'):
         super(ShowSettings, self).__init__(parent)
 
         self.setWindowTitle('Settings')
         if os.name is 'posix':  # is a mac or linux
-            scriptDir = os.path.dirname(sys.argv[0])
+            script_dir = os.path.dirname(sys.argv[0])
         else:  # is a  windows
-            scriptDir = os.getcwd()
+            script_dir = os.getcwd()
 
         self.setWindowIcon(QtGui.QIcon(
-            scriptDir + os.path.sep + 'include' + os.path.sep + 'icon_color' + os.path.sep + 'settings_icon.ico'))
+            script_dir + os.path.sep + 'include' + os.path.sep + 'icon_color' + os.path.sep + 'settings_icon.ico'))
 
         self.isCanceled = False
 
