@@ -13,10 +13,14 @@ Required packages:
 Video tutorials can be found in ./Tutorial
 
 Executing the code:
-Download and install python (I used 3.6), I recomend to install anaconda (https://www.anaconda.com/download/) and use Spider to edit and excute the code. Once conda is installed you can add anaconda to your enviromental variables (in windows) and excute the following commands in the command line (cmd)
+Download and install python (I used 3.5), I recomend to install anaconda (https://www.anaconda.com/download/) and use Spider to edit and excute the code. Once conda is installed you can add anaconda to your enviromental variables (in windows) and excute the following commands in the command line (cmd)
 
 - conda install -c menpo opencv3 
 - conda install -c menpo dlib
+- python -m pip install PyQt5
+- python -m pip install scipy
+- python -m pip install pandas
+- python -m pip install openpyxl
 
 this will allow you to use openCV and dlib in your python installation. There are ways to compile your own version of dlib and OpenCV, google is your friend. However, this is not necesary to use Emotrics. 
 Finally, clone this repository and execute Emotrics.py, this will open the Emotric's Graphical User Interface and allows you to use the software. 

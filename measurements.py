@@ -194,8 +194,8 @@ def deviation(pt1, pt2, center, rot_angle):
     
     x1_rot, y1_rot = rot_matrix.dot([x1-center[0], y1-center[1]])
     x2_rot, y2_rot = rot_matrix.dot([x2-center[0], y2-center[1]])
-    distance = abs(y1_rot-y2_rot)
-
+    # distance = abs(y1_rot-y2_rot)
+    distance = (y1_rot - y2_rot)
     return distance 
 
 def find_mid_point_lips(corner_left, corner_right, center, rot_angle):
