@@ -4,45 +4,32 @@ Created on Sat Aug 12 18:41:24 2017
 
 @author: Diego L.Guarin -- diego_guarin at meei.harvard.edu
 """
-import os 
+import os
 import sys
+
 import cv2
 import numpy as np
-
-from PyQt5 import QtWidgets
-from PyQt5 import QtGui
 from PyQt5 import QtCore
-
-
-
-
-from results_window import ShowResults
-from results_window import CustomTabResult
+from PyQt5 import QtGui
+from PyQt5 import QtWidgets
 
 from ImageViewerandProcess import ImageViewer
-from patient_window import CreatePatient
-
-
+from ProcessLandmarks import GetLandmarks
 from measurements import get_measurements_from_data
-
+from patient_window import CreatePatient
+from results_window import CustomTabResult
+from results_window import ShowResults
+from save_window import SaveWindow
+from settings_window import ShowSettings
 from utilities import estimate_lines
 from utilities import get_info_from_txt
-#from utilities import get_landmarks
-#from utilities import get_pupil_from_image
+from utilities import get_landmark_size
+# from utilities import get_landmarks
+# from utilities import get_pupil_from_image
 from utilities import mark_picture
 from utilities import save_snaptshot_to_file
 from utilities import save_txt_file
 from utilities import save_xls_file_patient
-from utilities import get_landmark_size
-
-from ProcessLandmarks import GetLandmarks
-
-from save_window import SaveWindow
-from settings_window import ShowSettings
-
-
-
-
 
 """
 This is the main window of the program, it contains a ToolBar and a GraphicsView objects. 
@@ -165,55 +152,63 @@ class window(QtWidgets.QWidget):
       
         #initialize the User Interface
         self.initUI()
-        
+
     def initUI(self):
-        #local directory
-        
-        if os.name is 'posix': #is a mac or linux
+        # local directory
+
+        if os.name is 'posix':  # is a mac or linux
             scriptDir = os.path.dirname(sys.argv[0])
-        else: #is a  windows 
+        else:  # is a  windows
             scriptDir = os.getcwd()
 
-        #read the image from file        
-        img_Qt = QtGui.QImage(scriptDir + os.path.sep + 'include' +os.path.sep +'icon_color'+ os.path.sep + 'Facial-Nerve-Center.jpg')
+        # read the image from file
+        img_Qt = QtGui.QImage(os.path.join(
+            scriptDir, 'include', 'icon_color', 'Facial-Nerve-Center.jpg'))
         img_show = QtGui.QPixmap.fromImage(img_Qt)
-        
-        #the image will be displayed in the custom ImageViewer
-        self.displayImage = ImageViewer()      
-        self.displayImage.setPhoto(img_show)    
-        
-        #toolbar         
+
+        # the image will be displayed in the custom ImageViewer
+        self.displayImage = ImageViewer()
+        self.displayImage.setPhoto(img_show)
+
+        # toolbar
         loadAction = QtWidgets.QAction('Load image', self)
-        loadAction.setIcon(QtGui.QIcon(scriptDir + os.path.sep + 'include' +os.path.sep +'icon_color'+ os.path.sep + 'load_icon.png'))
+        loadAction.setIcon(QtGui.QIcon(os.path.join(
+            scriptDir, 'include', 'icon_color', 'load_icon.png')))
         loadAction.triggered.connect(self.load_file)
-        
+
         createPatientAction = QtWidgets.QAction('Create patient', self)
-        createPatientAction.setIcon( QtGui.QIcon(scriptDir + os.path.sep + 'include' +os.path.sep +'icon_color'+ os.path.sep + 'patient_icon.png'))
+        createPatientAction.setIcon(QtGui.QIcon(os.path.join(
+            scriptDir, 'include', 'icon_color', 'patient_icon.png')))
         createPatientAction.triggered.connect(self.CreatePatient)
-        
-        #this action will be only active when a patient is created (i.e., there
-        #are two photos to analize), that's why I'm making it a persisten 
-        #element of the class, so that its state (Enble=True or Enable=False)
-        #can be modified during the execution of the program 
+
+        # this action will be only active when a patient is created (i.e., there
+        # are two photos to analize), that's why I'm making it a persisten
+        # element of the class, so that its state (Enble=True or Enable=False)
+        # can be modified during the execution of the program
         self.changephotoAction = QtWidgets.QAction('Change image', self)
-        self.changephotoAction.setIcon(QtGui.QIcon(scriptDir + os.path.sep + 'include' +os.path.sep +'icon_color'+ os.path.sep + 'change_photo_icon.png'))
+        self.changephotoAction.setIcon(QtGui.QIcon(os.path.join(
+            scriptDir, 'include', 'icon_color', 'change_photo_icon.png')))
         self.changephotoAction.setEnabled(False)
         self.changephotoAction.triggered.connect(self.ChangePhoto)
-        
+
         fitAction = QtWidgets.QAction('Fit image to window', self)
-        fitAction.setIcon(QtGui.QIcon(scriptDir + os.path.sep + 'include' +os.path.sep +'icon_color'+ os.path.sep + 'fit_to_size_icon.png'))
+        fitAction.setIcon(QtGui.QIcon(
+            scriptDir + os.path.sep + 'include' + os.path.sep + 'icon_color' + os.path.sep + 'fit_to_size_icon.png'))
         fitAction.triggered.connect(self.displayImage.show_entire_image)
-        
+
         eyeAction = QtWidgets.QAction('Match iris diameter', self)
-        eyeAction.setIcon(QtGui.QIcon(scriptDir + os.path.sep + 'include' +os.path.sep +'icon_color'+ os.path.sep + 'eye_icon.png'))
+        eyeAction.setIcon(QtGui.QIcon(
+            scriptDir + os.path.sep + 'include' + os.path.sep + 'icon_color' + os.path.sep + 'eye_icon.png'))
         eyeAction.triggered.connect(self.match_iris)
 
         eyeLoad = QtWidgets.QAction('Import iris position and diameter', self)
-        eyeLoad.setIcon(QtGui.QIcon(scriptDir + os.path.sep + 'include' +os.path.sep +'icon_color'+ os.path.sep + 'eye_icon_import.png'))
+        eyeLoad.setIcon(QtGui.QIcon(
+            scriptDir + os.path.sep + 'include' + os.path.sep + 'icon_color' + os.path.sep + 'eye_icon_import.png'))
         eyeLoad.triggered.connect(self.load_iris)
-        
+
         centerAction = QtWidgets.QAction('Find face center', self)
-        centerAction.setIcon(QtGui.QIcon(scriptDir + os.path.sep + 'include' +os.path.sep +'icon_color'+ os.path.sep + 'center_icon.png'))
+        centerAction.setIcon(QtGui.QIcon(
+            scriptDir + os.path.sep + 'include' + os.path.sep + 'icon_color' + os.path.sep + 'center_icon.png'))
         centerAction.triggered.connect(self.face_center)
         
         toggleAction = QtWidgets.QAction('Toggle landmarks', self)
@@ -1207,4 +1202,3 @@ if __name__ == '__main__':
     
     #GUI.show()
     app.exec_()
-    
