@@ -30,6 +30,7 @@ from utilities import mark_picture
 from utilities import save_snaptshot_to_file
 from utilities import save_txt_file
 from utilities import save_xls_file_patient
+from local_settings_manager import LocalSettings
 
 """
 This is the main window of the program, it contains a ToolBar and a GraphicsView objects. 
@@ -98,6 +99,7 @@ The toolbar includes actions for:
     
     - Exit: Exits the program 
 """
+settings = LocalSettings()
 
 
 class window(QtWidgets.QWidget):
@@ -106,15 +108,15 @@ class window(QtWidgets.QWidget):
         super(window, self).__init__()
         # self.setGeometry(5,60,700,500)
 
-        self.setWindowTitle('Emotrics')
+        LocalSettings()
 
         if os.name is 'posix':  # is a mac or linux
-            scriptDir = os.path.dirname(sys.argv[0])
+            script_dir = os.path.dirname(sys.argv[0])
         else:  # is a  windows
-            scriptDir = os.getcwd()
+            script_dir = os.getcwd()
 
-        self.setWindowIcon(QtGui.QIcon(
-            scriptDir + os.path.sep + 'include' + os.path.sep + 'icon_color' + os.path.sep + 'meei_3WR_icon.ico'))
+        self.setWindowIcon(QtGui.QIcon(os.path.join(
+            script_dir, 'include', 'icon_color', 'meei_3WR_icon.ico')))
 
         self._new_window = None
         self._file_name = None
@@ -140,10 +142,10 @@ class window(QtWidgets.QWidget):
         self.threadFirstPhoto = QtCore.QThread()  # no parent!
         self.threadSecondPhoto = QtCore.QThread()  # no parent!
 
-        self._CalibrationType = 'Iris'  # _CalibrationType can be 'Iris' or 'Manual'
-        self._CalibrationValue = 11.77  # calibration parameter
+        self._CalibrationType = settings.get_setting('_CalibrationType')  # _CalibrationType can be 'Iris' or 'Manual'
+        self._CalibrationValue = settings.get_setting('_CalibrationValue')  # calibration parameter
 
-        self._ModelName = 'MEE'  # _ModelType can be 'iBUGS' or 'MEE'
+        self._ModelName = settings.get_setting('_ModelName')  # _ModelType can be 'iBUGS' or 'MEE'
 
         # initialize the User Interface
         self.initUI()
@@ -634,9 +636,10 @@ class window(QtWidgets.QWidget):
 
         # load a file using the widget
         name, _ = QtWidgets.QFileDialog.getOpenFileName(
-            self, 'Load Image',
-            '', "Image files (*.png *.jpg *.jpeg *.tif *.tiff *.PNG *.JPG *.JPEG *.TIF *.TIFF)")
-
+            parent=self, caption='Load Image',
+            filter="Image files (*.png *.jpg *.jpeg *.tif *.tiff *.PNG *.JPG *.JPEG *.TIF *.TIFF)",
+            directory=settings.get_setting("_lastUsedImageFolder"))
+        settings.set_setting("_lastUsedImageFolder", name)
         if not name:
             pass
         else:
